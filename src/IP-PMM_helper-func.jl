@@ -192,3 +192,16 @@ function stepsize_in_orthant(vars::IPMVariables{T}, steps::IPMVariables{T}, indi
 
     return α_primal, α_dual
 end
+
+
+"""
+    VectorTransposeOperator(y)
+
+Construct LinearOperator yᵀ for a vector y.
+"""
+function VectorTransposeOperator(y::AbstractVector{T}) where T <: Number
+    return LO.LinearOperator(T, 1, length(y), false, false,
+                            (res, v) -> copyto!(res, dot(y,v)),
+                            (res, v) -> copyto!(res, v .* y),
+                            (res, v) -> copyto!(res, v .* conj(y)))
+end

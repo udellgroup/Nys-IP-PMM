@@ -1,4 +1,9 @@
+using CSV
+using DataFrames
+using Dates
+
 abstract type AbstractIPMProblem end
+abstract type AbstractMPSProblem <: AbstractIPMProblem end
 
 """
     test_IPPMM()
@@ -254,7 +259,7 @@ end
 
 function save_IPPMM_csv(problem_type, problem_name::String, nrow, IPPMM_args, initpt_info, IPPMM_summary)
     # Create (if not existed) saving directory: scripts/{problem_type}/results/{problem_name}/IPPMM
-    if typeof(problem_type) <: Union{MIPLIBProblem, NetlibProblem}
+    if typeof(problem_type) <: AbstractMPSProblem
         if problem_type.presolved
             destination = scriptsdir(get_class_name(problem_type), "results", "Presolved", problem_name, "IPPMM")
         else

@@ -414,5 +414,14 @@ $RECYCLE.BIN/
 # Manifest
 Manifest.toml
 
+## Data sets folder
+data/*
+scripts/SVM/results/*
+scripts/Portfolio/results/*
+
+## Analysis files
+scripts/SVM/analysis/*
+scripts/Portfolio/analysis/*
+
 ## Acknowledgements
 # Many thanks to `https://gitignore.io/`, written and maintained by Joe Blau, which contributed much material to this gitignore file.
