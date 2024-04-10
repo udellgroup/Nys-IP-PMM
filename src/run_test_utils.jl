@@ -207,30 +207,6 @@ end
 
 
 ##
-function get_csvnames(time_stamp::String, problem_type, problem_name::String, IPPMM_args::IPPMMargs)
-    # Unwrap IPPMM_args
-    preconditioner = @views IPPMM_args.preconditioner
-    rank = @views IPPMM_args.rank
-    tol = @views IPPMM_args.tol
-
-    # Create stem of the filenames
-    if typeof(problem_type) <: Union{portfolio_original, portfolio_diag_approx}
-        m, n = size(problem_type.B)
-        stem = @ntuple ts=time_stamp prob=problem_name m=m n=n pc=preconditioner rank=rank tol=@sprintf("%.e", tol)
-    elseif typeof(problem_type) <: portfolio_risk_model
-        m, n = size(problem_type.B)
-        k = size(problem_type.Fᵀ, 1)
-        stem = @ntuple ts=time_stamp prob=problem_name m=m n=n k=k pc=preconditioner rank=rank tol=@sprintf("%.e", tol)
-    else
-        stem = @ntuple ts=time_stamp prob=problem_name pc=preconditioner rank=rank tol=@sprintf("%.e", tol)
-    end
-    filestem = savename(stem, sort=false, sigdigits=1)
-    
-    # Return two filenames ending with _history.csv and _status.csv
-    return filestem * "_history.csv", filestem * "_status.csv"
-end
-
-
 function create_status_df(time_stamp, problem_name, IPPMM_args, IPPMM_summary, initpt_info, nrow)
     # Compute total inner iterations
     total_inner_iter = sum(IPPMM_summary.history["inner_iter_predictor"]) + sum(IPPMM_summary.history["inner_iter_corrector"])   
