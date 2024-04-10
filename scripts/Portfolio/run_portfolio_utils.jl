@@ -193,3 +193,27 @@ end
     get_class_name(portfolio::PortfolioProblem)
 """
 get_class_name(portfolio::PortfolioProblem) = "Portfolio"
+
+"""
+    get_csvnames(time_stamp::String, problem_type::PortfolioProblem, problem_name::String, IPPMM_args::IPPMMargs)
+"""
+function get_csvnames(time_stamp::String, problem_type::PortfolioProblem, problem_name::String, IPPMM_args::IPPMMargs)
+    # Unwrap IPPMM_args
+    preconditioner = @views IPPMM_args.preconditioner
+    rank = @views IPPMM_args.rank
+    tol = @views IPPMM_args.tol
+
+    # Create stem of the filenames
+    if typeof(problem_type) <: Union{portfolio_original, portfolio_diag_approx}
+        m, n = size(problem_type.B)
+        stem = @ntuple ts=time_stamp prob=problem_name m=m n=n pc=preconditioner rank=rank tol=@sprintf("%.e", tol)
+    elseif typeof(problem_type) <: portfolio_risk_model
+        m, n = size(problem_type.B)
+        k = size(problem_type.Fᵀ, 1)
+        stem = @ntuple ts=time_stamp prob=problem_name m=m n=n k=k pc=preconditioner rank=rank tol=@sprintf("%.e", tol)
+    end
+    filestem = savename(stem, sort=false, sigdigits=1)
+    
+    # Return two filenames ending with _history.csv and _status.csv
+    return filestem * "_history.csv", filestem * "_status.csv"
+end
