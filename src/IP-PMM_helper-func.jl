@@ -1,6 +1,7 @@
 ###########################################################################################
 ##                          Helper Functions for IP_PMM_bdd()                                ##
 ###########################################################################################
+using RandomizedPreconditioners
 
 function dim_checking(m::Int, n::Int, c, opQ, b, u, indices::IPMIndices)
     ind_I = @views indices.normal    # indices of positive unbounded variables xᴵ ≥ 0
