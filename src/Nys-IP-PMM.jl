@@ -360,9 +360,7 @@ function IP_PMM_bdd(input::IPMInput{T};
             # ================================================================================================================ #
             # Computing the new non-regularized residuals. If the overall error is decreased, for the primal and dual 
             # residuals, we accept the new estimates for the Lagrange multipliers and primal optimal solution respectively.
-            # If not, we keep the estimates constant. However, 
-            # we continue decreasing the penalty parameters, limiting the decrease to the value of the minimum pivot
-            # of the LDL^T decomposition (to ensure single pivots).
+            # If not, we keep the estimates constant.
             # ---------------------------------------------------------------------------------------------------------------- #
             # new_nr_res_p = b - opA*x
             mul!(new_nr_res_p, opA, x, -one(T), zero(T))
