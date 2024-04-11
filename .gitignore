@@ -417,6 +417,7 @@ Manifest.toml
 ## Data sets folder
 data/*
 scripts/SVM/results/*
+scripts/SVM/summary/*
 scripts/Portfolio/results/*
 
 ## Analysis files
