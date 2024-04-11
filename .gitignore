@@ -419,8 +419,7 @@ scripts/SVM/summary/*
 scripts/Portfolio/results/*
 
 ## Analysis files
-scripts/SVM/analysis/*
-scripts/Portfolio/analysis/*
+notebooks/Portfolio_analysis/demonstrate_results
 
 ## Acknowledgements
 # Many thanks to `https://gitignore.io/`, written and maintained by Joe Blau, which contributed much material to this gitignore file.
