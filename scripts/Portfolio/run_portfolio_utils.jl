@@ -105,77 +105,6 @@ function get_IPPMMParams(problem_type::portfolio_risk_model{T}, tol::T) where T 
 end
 
 
-Base.@kwdef struct portfolio_diag_approx{T} <: PortfolioProblem{T}
-    Σ::AbstractMatrix{T}
-    μ::AbstractVector{T}
-    B::AbstractMatrix{T}
-    Bxub::AbstractVector{T}
-    x̄::AbstractVector{T}
-    Δ::AbstractVector{T}
-end
-
-"""
-    Generate portfolio_diag_approx from portfolio_original.
-"""
-function portfolio_diag_approx(original::portfolio_original{T}, x̄::AbstractVector{T}, Δ::AbstractVector{T}) where T
-    return portfolio_diag_approx(original.Σ, original.μ, original.B, original.Bxub, x̄, Δ)
-end
-
-
-function get_IPMInput(problem_type::portfolio_diag_approx{T}) where T <: Number
-    # Extract data
-    Σ, μ, B = problem_type.Σ, problem_type.μ, problem_type.B
-    Bxub, x̄, Δ = problem_type.Bxub, problem_type.x̄, problem_type.Δ
-    diagΣ = diag(Σ)
-
-    # Problem dimensions
-    m, n = size(B)
-
-    # Quadratic matrix Q
-    diagQ = [diagΣ; spzeros(T, n+m)]
-    opQ = LO.BlockDiagonalOperator(opDiagonal(diagΣ), opZeros(T, n, n), opZeros(T, m, m))
-    
-    # Onjective linear coefficients c
-    cx = Σ * x̄ - diagΣ .* x̄ - μ
-    c = [cx; zeros(T, n+m)]
-
-    # Constraint matrix A
-    op1T = VectorTransposeOperator(ones(T, n))
-    opA = [ LO.LinearOperator(B) opZeros(T, m, n) opEye(T, m); 
-            op1T opZeros(T, 1, n+m); 
-            opEye(T, n) -opEye(T, n) opZeros(T, n, m) ]
-
-    # RHS vector b
-    b = [Bxub; one(T); x̄ - Δ]
-
-    # Index Sets and upper bounds xub
-    box_ind = collect(n+1:2*n)
-    free_ind = Int64[]
-    normal_ind = vcat(collect(1:n), collect(2*n+1:2*n+m))
-    u = 2 * Δ
-
-    nrow, ncol = size(opA)
-    
-    return IPMInput(nrow, ncol, opA, b, c, IPMIndices(normal_ind, box_ind, free_ind), u, opQ, diagQ, :QP)
-end
-
-function get_IPPMMParams(problem_type::portfolio_diag_approx{T}, tol::T) where T <: Number
-    # Initialize IPPMMParams
-    params = IPPMMParams(T)
-    
-    # Use normal equations
-    params.normal_eq = true
-
-    # Compute reg_limit via inf norm of A and Q
-    inf_norm_A = max((1.0 + norm(problem_type.B, Inf)), 1.0)
-    inf_norm_Q = maximum(diag(problem_type.Σ))
-    params.reg_limit = max(5 * tol * (1 / max(inf_norm_A^2, inf_norm_Q^2)), 5e-10)
-    
-    return params
-end
-
-
-
 ##
 function get_IPMInput_IPPMMParams(problem_type::PortfolioProblem{T}, problem_name::String, tol::T) where T <: Number
     
@@ -194,6 +123,7 @@ end
 """
 get_class_name(portfolio::PortfolioProblem) = "Portfolio"
 
+
 """
     get_csvnames(time_stamp::String, problem_type::PortfolioProblem, problem_name::String, IPPMM_args::IPPMMargs)
 """
@@ -204,7 +134,7 @@ function get_csvnames(time_stamp::String, problem_type::PortfolioProblem, proble
     tol = @views IPPMM_args.tol
 
     # Create stem of the filenames
-    if typeof(problem_type) <: Union{portfolio_original, portfolio_diag_approx}
+    if typeof(problem_type) <: portfolio_original
         m, n = size(problem_type.B)
         stem = @ntuple ts=time_stamp prob=problem_name m=m n=n pc=preconditioner rank=rank tol=@sprintf("%.e", tol)
     elseif typeof(problem_type) <: portfolio_risk_model
