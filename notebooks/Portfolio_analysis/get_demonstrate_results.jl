@@ -8,6 +8,11 @@ using DrWatson
 source_path = scriptsdir("Portfolio", "results", "risk_model", "IPPMM")
 destination_path = projectdir("notebooks", "Portfolio_analysis", "demonstrate_results")
 
+# Create the destination folder if it does not exist
+if !isdir(destination_path)
+    mkpath(destination_path)
+end
+
 # Get a list of all CSV files in the source path
 csv_files = filter(x -> x[end-3:end] == ".csv", readdir(source_path))
 
