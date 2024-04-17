@@ -12,10 +12,10 @@ Random.seed!(1234)
 
 # Generate the problem from the risk model
 T = Float64
-m, n, k = 10000, 50000, 400
+m, n, k = 30000, 80000, 400
 d = vcat(collect(range(1e6, 1e1, length=40)), [1 / i for i in 1:(n-40)]) #[1 / i for i in 1:n]
 println("Generating the models with m = $m, n = $n, k = $k...")
-risk_model, original_model = generate_models(m, n, k, d; T = T)
+risk_model, original_model = generate_models(m, n, k, d; T = T, saved = true)
 println("Finished generating the models.")
 
 # Run the IPPMM method on risk model

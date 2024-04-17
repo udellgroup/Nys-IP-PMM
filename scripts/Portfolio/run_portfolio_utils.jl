@@ -42,11 +42,9 @@ function generate_models(m::Int, n::Int, k::Int, d::AbstractVector; T = Float64)
     μ = randn(n)
 
     # Generate B and Bxub
-    B = zeros(m, n)
-    B[1, :] = 5 * randn(n)
-    for i in 1:m
-        B[i, :] = B[1, :] + randn(n) * 0.001
-    end
+    row1 = 5 * randn(1,n)
+    B = repeat(row1, m, 1)
+    B[2:m, :] += randn(m-1, n) * 0.001
     Bxub = ones(m) + rand(m)
 
     return portfolio_risk_model(Fᵀ, D, μ, B, Bxub), portfolio_original(Σ, μ, B, Bxub)
