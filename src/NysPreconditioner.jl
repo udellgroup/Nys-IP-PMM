@@ -316,7 +316,6 @@ function update_sketchsize!(method_P::method_Nystrom, nrow::Int, adaptive_info)
     isnothing(method_P.max_sketchsize) ? method_P.max_sketchsize = floor(Int, nrow/5) : nothing
     
     # Unwrap adaptive_info
-    adaptive_info = adaptive_info[1]    # input adaptive_info is a tuple of Dict
     inneriter = adaptive_info["inneriter"]
     inneriter_jump = adaptive_info["inneriter_jump"]
     

@@ -59,17 +59,29 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
             (typeof(method_P) <: method_PartialCholesky && method_P.k_steps == 0))
             reset_rank!(method_P, nrow)
         end
+
+        # Record the start sketchsize for Nystrom
+        start_sketchsize = (typeof(method_P) <: method_Nystrom) ? method_P.sketchsize : 0
                 
-        # Run IP-PMM for the first time to get status
+        # First run to get status
         print_running_info(problem_name, method_P)
         time_IPPMM = @elapsed begin
             history, opt, vars = IP_PMM_bdd(input; initial_point=initial_point, params=params,
                                             method_P=method_P, 
                                             tol=tol, maxit = maxit, pc=true, printlevel = 2);
         end
+        println("First run takes ", time_IPPMM, " seconds.\n")
+
         # Run IP-PMM again to get time
         if (opt == :Solved) && timed
             println("-"^110, "\n", "Running again to get time...\n")
+            
+            # Reset sketchsize to initial sketchsize for Nystrom
+            if (typeof(method_P) <: method_Nystrom) 
+                method_P.sketchsize = start_sketchsize
+            end
+
+            # Second run to time
             time_IPPMM = @elapsed begin
                 history, opt, vars = IP_PMM_bdd(input; initial_point=initial_point, params=params,
                                                 method_P=method_P, 
