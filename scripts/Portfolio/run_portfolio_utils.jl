@@ -1,4 +1,5 @@
 using RandomizedPreconditioners
+using JLD2
 
 abstract type PortfolioProblem{T} <: AbstractIPMProblem end 
 
@@ -28,7 +29,18 @@ Base.@kwdef struct portfolio_risk_model{T} <: PortfolioProblem{T}
 end
 
 
-function generate_models(m::Int, n::Int, k::Int, d::AbstractVector; T = Float64)
+function generate_models(m::Int, n::Int, k::Int, d::AbstractVector; T = Float64, saved::Bool = false)
+    # If file exists, load the matrices from the file
+    file_path = scriptsdir("Portfolio", "m=$(m)_n=$(n)_k=$(k).jld2")
+    if isfile(file_path)
+        println("Loading the matrices from the file (m = $m, n = $n, k = $k)...")
+        data = load(file_path)
+        println("Matrices are loaded from the file.")
+        return portfolio_risk_model(data["Fᵀ"], data["D"], data["μ"], data["B"], data["Bxub"]), 
+               portfolio_original(data["Σ"], data["μ"], data["B"], data["Bxub"])
+    end
+    
+    println("Generating the models with m = $m, n = $n, k = $k...")
     # Generate Σ
     U = qr(randn(T, n, n)).Q
     Σ = U * Diagonal(d) * U'
@@ -46,6 +58,15 @@ function generate_models(m::Int, n::Int, k::Int, d::AbstractVector; T = Float64)
     B = repeat(row1, m, 1)
     B[2:m, :] += randn(m-1, n) * 0.001
     Bxub = ones(m) + rand(m)
+    println("Finished generating the models.")
+
+    if saved
+        println("Saving the matrices to the file...")
+        save_path = scriptsdir("Portfolio", "m=$(m)_n=$(n)_k=$(k).jld2")
+        # Save the matrices as a JLD2 file
+        save(save_path, "Σ", Σ, "Fᵀ", Fᵀ, "D", D, "μ", μ, "B", B, "Bxub", Bxub)
+        println("Matrices are saved to the file.")
+    end
 
     return portfolio_risk_model(Fᵀ, D, μ, B, Bxub), portfolio_original(Σ, μ, B, Bxub)
 end

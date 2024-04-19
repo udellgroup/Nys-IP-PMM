@@ -10,17 +10,20 @@ include(scriptsdir("Portfolio/run_portfolio_utils.jl"))
 # Set the seed
 Random.seed!(1234)
 
-# Generate the problem from the risk model
+# Set the parameters
 T = Float64
-m, n, k = 30000, 80000, 400
-d = vcat(collect(range(1e6, 1e1, length=40)), [1 / i for i in 1:(n-40)]) #[1 / i for i in 1:n]
-println("Generating the models with m = $m, n = $n, k = $k...")
+m, n, k = 50000, 80000, 100
+isolated_num = 20
+d_fast = [10^i for i in range(16, 1, length=isolated_num)]
+d_slow = [1 / i for i in 1:(n-isolated_num)]
+d = vcat(d_fast, d_slow)
+
+# Generate the problem or load it from the file
 risk_model, original_model = generate_models(m, n, k, d; T = T, saved = true)
-println("Finished generating the models.")
 
 # Run the IPPMM method on risk model
 problem_type = risk_model
 problem_name = "risk_model"
 tol=1e-8
-methods = [method_PartialCholesky(20), method_Nystrom(20, false), method_NoPreconditioner()]
+methods = [method_Nystrom(20, false), method_NoPreconditioner(), method_PartialCholesky(20)]
 vars = test_IPPMM(problem_type, problem_name, methods, tol, maxit = 40);

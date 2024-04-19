@@ -420,6 +420,7 @@ scripts/Portfolio/results/*
 
 ## Analysis files
 notebooks/Portfolio_analysis/demonstrate_results
+notebooks/Portfolio_analysis/previous_demonstrate_results
 
 ## Acknowledgements
 # Many thanks to `https://gitignore.io/`, written and maintained by Joe Blau, which contributed much material to this gitignore file.
