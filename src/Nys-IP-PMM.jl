@@ -28,18 +28,21 @@ function IP_PMM_bdd(input::IPMInput{T};
     cumulative_time = 0.0
     cumulative_time += @elapsed begin
     # Create dict for storing results
-    history = OrderedDict("iter"                    => Int[], 
-                          "primal_feasibility"      => Float64[], 
-                          "dual_feasibility"        => Float64[], 
-                          "optimality_gap"          => Float64[],
-                          "inner_iter_predictor"    => Int[], 
-                          "inner_iter_corrector"    => Int[],
-                          "krylov_tol"              => Float64[], 
-                          "rank"                    => Int[],
-                          "construct_precond_elapsed" => Float64[],
-                          "CG_solving_elapsed"    => Float64[],
-                          "cumulative_time"        => Float64[]
-                          )
+    history = OrderedDict(
+        "iter"                    => Int[], 
+        "primal_feasibility"      => Float64[], 
+        "dual_feasibility"        => Float64[], 
+        "optimality_gap"          => Float64[],
+        "inner_iter_predictor"    => Int[], 
+        "inner_iter_corrector"    => Int[],
+        "krylov_tol"              => Float64[], 
+        "rank"                    => Int[],
+        "construct_precond_elapsed" => Float64[],
+        "CG_solving_elapsed"      => Float64[],
+        "cumulative_time"         => Float64[],
+        "rho"                     => Float64[],
+        "delta"                   => Float64[]
+    )
     # Unwrap input
     m, n = input.nrow, input.ncol
     opA = @views input.opA
@@ -245,6 +248,10 @@ function IP_PMM_bdd(input::IPMInput{T};
                 update_opN_Reg!(opN_Reg, diagQ, ρ, δ,  vars, indices)
                 update_preconditioner!(method_P, Pinv, opN_Reg, adaptive_info)
             end
+
+            # Save opN_Reg.opN.D.diag as a JLD2 file
+            filepath = scriptsdir("SVM", "results", "CIFAR10_1000", "IPPMM", "diagD", "CIFAR10_1000_tol=$(tol)_iter=$(iter)_diagD.jld2")
+            save(filepath, Dict("diagD" => opN_Reg.opN.D.diag, "delta" => δ))
             # ================================================================================================================#
             # Mehrotra predictor-corrector.
             # ================================================================================================================#
@@ -411,7 +418,7 @@ function IP_PMM_bdd(input::IPMInput{T};
             # ---------------------------------------------------------------------------------------------------------------- #
             pres_inf = norm(new_nr_res_p)/max(100,norm(b))
             dres_inf = norm(new_nr_res_d)/max(100,norm(c))  
-            print_output(pl, pc, method_P, iter , pres_inf, dres_inf, μ, inneriter, krylov_tol, σ, α_primal, α_dual);
+            print_output(pl, pc, method_P, iter , pres_inf, dres_inf, μ, inneriter, krylov_tol, α_primal, α_dual, ρ, δ);
 
         end
         # ================================================================================================================ #
@@ -429,6 +436,8 @@ function IP_PMM_bdd(input::IPMInput{T};
             push!(history["inner_iter_corrector"], 0)
         end
         push!(history["krylov_tol"], krylov_tol)
+        push!(history["rho"], ρ)
+        push!(history["delta"], δ)
 
         if (type_method_P <: method_Nystrom)
             push!(history["rank"], method_P.sketchsize)

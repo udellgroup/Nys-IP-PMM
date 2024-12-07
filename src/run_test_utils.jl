@@ -68,7 +68,7 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
         time_IPPMM = @elapsed begin
             history, opt, vars = IP_PMM_bdd(input; initial_point=initial_point, params=params,
                                             method_P=method_P, 
-                                            tol=tol, maxit = maxit, pc=true, printlevel = 2);
+                                            tol=tol, maxit = maxit, pc=true, printlevel = 3);
         end
         println("First run takes ", time_IPPMM, " seconds.\n")
 
@@ -312,9 +312,10 @@ function print_header(pl, pc, method_P)
     end
     if (pl >= 3)
         @printf("  ")
-        @printf("%8s  ", "σ")
         @printf("%8s  ", "α_primal")
         @printf("%8s  ", "α_dual")
+        @printf("%8s  ", "ρ")
+        @printf("%8s  ", "δ")
     end
     if (pl >= 1)
         if (pc == true)
@@ -328,14 +329,14 @@ function print_header(pl, pc, method_P)
         (type_method_P <: method_NoPreconditioner) ? nothing : @printf("  ==========")
     end
     if (pl >= 3)
-        @printf("    ========  ========  ========")
+        @printf("    ========  ========  ========  ========")
     end
     if (pl >= 1)
         @printf("\n")
     end
 end
 
-function print_output(pl, pc, method_P, it, xinf, sinf, μ, inneriter, krylov_tol, σ, α_primal, α_dual)
+function print_output(pl, pc, method_P, it, xinf, sinf, μ, inneriter, krylov_tol, α_primal, α_dual, ρ, δ)
     type_method_P = typeof(method_P)
     if (type_method_P <: method_Nystrom)
         rank = method_P.sketchsize
@@ -363,9 +364,10 @@ function print_output(pl, pc, method_P, it, xinf, sinf, μ, inneriter, krylov_to
     end
     if (pl >= 3)
         @printf("  ")
-        @printf("%8.2e  ", σ)
         @printf("%8.2e  ", α_primal)
         @printf("%8.2e  ", α_dual)
+        @printf("%8.2e  ", ρ)
+        @printf("%8.2e  ", δ)
     end
     if (pl >= 1)
         @printf("\n")
