@@ -13,7 +13,8 @@ Run test function for IPPMM.
 function test_IPPMM(problem_type::AbstractIPMProblem, 
                     problem_name::String, 
                     method_P_list::Vector, tol=1e-4; 
-                    krylov_tol = 1e-6, maxit::Int = 25, timed::Bool = true, saved::Bool = true)
+                    krylov_tol = 1e-6, maxit::Int = 25, 
+                    timed::Bool = true, saved::Bool = true, savedir::Union{String, Nothing} = nothing)
     println("-"^110)
     
     # Do not time if saved is false
@@ -113,7 +114,7 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
             preconditioner, rank = unwrap_method_P(method_P)
             IPPMM_args = IPPMMargs(preconditioner, rank, tol, maxit)
             IPPMM_summary = IPPMMSummary(history, opt, time_IPPMM)
-            save_IPPMM_csv(problem_type, problem_name, nrow, IPPMM_args, initpt_info, IPPMM_summary)
+            save_IPPMM_csv(problem_type, problem_name, nrow, IPPMM_args, initpt_info, IPPMM_summary, savedir)
             println("Successfully saved results.\n", "="^110)
         end
     end
@@ -261,17 +262,23 @@ function create_status_df(time_stamp, problem_name, IPPMM_args, IPPMM_summary, i
                      "TotalElapsedCGsolving" => total_CG_elpased)
 end
 
-function save_IPPMM_csv(problem_type, problem_name::String, nrow, IPPMM_args, initpt_info, IPPMM_summary)
-    # Create (if not existed) saving directory: scripts/{problem_type}/results/{problem_name}/IPPMM
-    if typeof(problem_type) <: AbstractMPSProblem
-        if problem_type.presolved
-            destination = scriptsdir(get_class_name(problem_type), "results", "Presolved", problem_name, "IPPMM")
-        else
-            destination = scriptsdir(get_class_name(problem_type), "results", "NonPresolved", problem_name, "IPPMM")
-        end
+function save_IPPMM_csv(problem_type, problem_name::String, nrow, IPPMM_args, initpt_info, IPPMM_summary, savedir::Union{String, Nothing})
+    # Set destination directory
+    if !isnothing(savedir)
+        destination = savedir
     else
-        destination = scriptsdir(get_class_name(problem_type), "results", problem_name, "IPPMM")
+        if typeof(problem_type) <: AbstractMPSProblem
+            if problem_type.presolved
+                destination = scriptsdir(get_class_name(problem_type), "results", "Presolved", problem_name, "IPPMM")
+            else
+                destination = scriptsdir(get_class_name(problem_type), "results", "NonPresolved", problem_name, "IPPMM")
+            end
+        else
+            destination = scriptsdir(get_class_name(problem_type), "results", problem_name, "IPPMM")
+        end
     end
+    
+    # Create (if not existed) saving directory: scripts/{problem_type}/results/{problem_name}/IPPMM
     isdir(destination) ? nothing : mkpath(destination)
     
     # Get time stamp

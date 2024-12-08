@@ -415,7 +415,8 @@ Manifest.toml
 ## Data sets folder
 data/*
 scripts/SVM/results/*
-scripts/SVM/analysis/*
+scripts/SVM/analysis/time_rank/raw_results/*
+scripts/SVM/analysis/time_rank/averaged_results/*
 scripts/SVM/summary/*
 scripts/Portfolio/results/*
 
