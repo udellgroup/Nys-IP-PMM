@@ -367,7 +367,12 @@ function print_output(pl, pc, method_P, it, xinf, sinf, μ, inneriter, krylov_to
         @printf("%8.2e  ", sinf)
         @printf("%8.2e  ", μ)
         if it == 0
-            @printf("%11s  ", "")
+            if (pc == true)
+                @printf("%11s  ", "")
+                @printf("%11s  ", "")
+            else
+                @printf("%11s  ", "")
+            end
         elseif (pc == true)
             @printf("%11d  ", inneriter[1])
             @printf("%11d  ", inneriter[2])
