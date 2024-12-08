@@ -62,13 +62,23 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
 
         # Record the start sketchsize for Nystrom
         start_sketchsize = (typeof(method_P) <: method_Nystrom) ? method_P.sketchsize : 0
+        # Initialize A for PartialCholesky
+        A = nothing
                 
         # First run to get status
         print_running_info(problem_name, method_P)
         time_IPPMM = @elapsed begin
+            # Construct A matrix for PartialCholesky
+            if (typeof(method_P) <: method_PartialCholesky)
+                println("Construct constraint matrix A (for Partial Cholesky preconditioner) of ", problem_name, "...")
+                A = get_A_matrix(problem_type, problem_name)
+                println("Successfully constructed A for ", problem_name, ".")
+            end
+            
+            # Run IP-PMM
             history, opt, vars = IP_PMM_bdd(input; initial_point=initial_point, params=params,
                                             method_P=method_P, 
-                                            tol=tol, maxit = maxit, pc=true, printlevel = 3);
+                                            tol=tol, maxit = maxit, pc=true, printlevel = 3, A = A);
         end
         println("First run takes ", time_IPPMM, " seconds.\n")
 
@@ -83,9 +93,15 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
 
             # Second run to time
             time_IPPMM = @elapsed begin
+                # Construct A matrix for PartialCholesky
+                if (typeof(method_P) <: method_PartialCholesky)
+                    A = get_A_matrix(problem_type, problem_name)
+                end
+                
+                # Run IP-PMM
                 history, opt, vars = IP_PMM_bdd(input; initial_point=initial_point, params=params,
                                                 method_P=method_P, 
-                                                tol=tol, maxit = maxit, pc=true, printlevel = 0);
+                                                tol=tol, maxit = maxit, pc=true, printlevel = 0, A = A);
             end
         end
         println("Size of iter: ", length(history["iter"]))
@@ -350,7 +366,9 @@ function print_output(pl, pc, method_P, it, xinf, sinf, μ, inneriter, krylov_to
         @printf("%8.2e  ", xinf)
         @printf("%8.2e  ", sinf)
         @printf("%8.2e  ", μ)
-        if (pc == true)
+        if it == 0
+            @printf("%11s  ", "")
+        elseif (pc == true)
             @printf("%11d  ", inneriter[1])
             @printf("%11d  ", inneriter[2])
         else
@@ -359,13 +377,23 @@ function print_output(pl, pc, method_P, it, xinf, sinf, μ, inneriter, krylov_to
     end
     if (pl >= 2)
         @printf("  ")
-        @printf("%10.2e  ", krylov_tol)
-        (type_method_P <: method_NoPreconditioner) ? nothing : @printf("%10d  ", rank)
+        if it == 0
+            @printf("%10s  ", "")
+            (type_method_P <: method_NoPreconditioner) ? nothing : @printf("%10s  ", "")
+        else
+            @printf("%10.2e  ", krylov_tol)
+            (type_method_P <: method_NoPreconditioner) ? nothing : @printf("%10d  ", rank)
+        end
     end
     if (pl >= 3)
         @printf("  ")
-        @printf("%8.2e  ", α_primal)
-        @printf("%8.2e  ", α_dual)
+        if it == 0
+            @printf("%8s  ", "")
+            @printf("%8s  ", "")
+        else
+            @printf("%8.2e  ", α_primal)
+            @printf("%8.2e  ", α_dual)
+        end
         @printf("%8.2e  ", ρ)
         @printf("%8.2e  ", δ)
     end

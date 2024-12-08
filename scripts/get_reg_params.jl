@@ -85,7 +85,7 @@ function generate_latex_table_strings(dataset_names::Vector{String}, csv_paths::
         latex_table *= " \\\\\n"
 
         # Dynamically generate \cmidrule commands
-        for i in 1:num_datasets_per_table
+        for i in 1:length(paths_in_table)
             start_col = 2 * i  # Start column for this dataset
             end_col = start_col + 1  # End column for this dataset
             latex_table *= "\\cmidrule(lr){" * string(start_col) * "-" * string(end_col) * "} "
@@ -136,19 +136,20 @@ end
 
 ##
 csv_paths = [
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/CIFAR10/IPPMM/ts=2024-12-06--20:30:45_prob=CIFAR10_pc=Nystrom_rank=200_tol=1e-04_history.csv",
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/RNASeq/IPPMM/ts=2024-12-06--20:06:54_prob=RNASeq_pc=Nystrom_rank=200_tol=1e-04_history.csv",
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/SensIT/IPPMM/ts=2024-12-06--20:31:12_prob=SensIT_pc=Nystrom_rank=50_tol=1e-04_history.csv",
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/arcene/IPPMM/ts=2024-12-06--20:07:11_prob=arcene_pc=Nystrom_rank=20_tol=1e-04_history.csv",
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/dexter/IPPMM/ts=2024-12-06--20:06:11_prob=dexter_pc=Nystrom_rank=10_tol=1e-04_history.csv",
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/sector/IPPMM/ts=2024-12-06--20:07:09_prob=sector_pc=Nystrom_rank=20_tol=1e-04_history.csv",
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/CIFAR10_1000/IPPMM/ts=2024-12-05--23:58:45_prob=CIFAR10_1000_pc=Nystrom_rank=200_tol=1e-08_history.csv"
+    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/CIFAR10/IPPMM/ts=2024-12-07--01:26:18_prob=CIFAR10_pc=Nystrom_rank=200_tol=1e-04_history.csv",
+    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/RNASeq/IPPMM/ts=2024-12-07--00:33:49_prob=RNASeq_pc=Nystrom_rank=200_tol=1e-04_history.csv",
+    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/STL10/IPPMM/ts=2024-12-07--09:48:04_prob=STL10_pc=Nystrom_rank=800_tol=1e-04_history.csv",
+    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/SensIT/IPPMM/ts=2024-12-07--01:26:59_prob=SensIT_pc=Nystrom_rank=50_tol=1e-04_history.csv",
+    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/sector/IPPMM/ts=2024-12-07--00:34:19_prob=sector_pc=Nystrom_rank=20_tol=1e-04_history.csv",
+    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/arcene/IPPMM/ts=2024-12-07--00:34:22_prob=arcene_pc=Nystrom_rank=20_tol=1e-04_history.csv",
+    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/dexter/IPPMM/ts=2024-12-07--00:32:22_prob=dexter_pc=Nystrom_rank=10_tol=1e-04_history.csv",
+    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/CIFAR10_1000/IPPMM/ts=2024-12-06--23:24:18_prob=CIFAR10_1000_pc=Nystrom_rank=200_tol=1e-08_history.csv"
 ]
 
 dataset_names = [
     "CIFAR10",
     "RNASeq",
-    # "STL10",
+    "STL10",
     "SensIT",
     "sector",
     "arcene",

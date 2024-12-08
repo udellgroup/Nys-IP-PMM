@@ -54,7 +54,7 @@ end
 
 function update_preconditioner!(method::method_PartialCholesky{S}, 
                                 PC::PartialCholesky{S}, 
-                                opNreg::opRegNormalEquations, adaptive_info...) where {S}    
+                                opNreg::opRegNormalEquations, A::Union{AbstractMatrix{S}, Nothing}, adaptive_info...) where {S}    
     T = eltype(opNreg)
     ncol = LinearAlgebra.checksquare(opNreg)
     k = method.k_steps
@@ -65,7 +65,7 @@ function update_preconditioner!(method::method_PartialCholesky{S},
     @assert size(PC.H1,2) == k "Target rank of PartialCholesky must be equal to k."
 
     # Update diagonal of N
-    update_diagN_opN!(opNreg.opN)
+    update_diagN_opN!(opNreg.opN, A)
 
     # Sort the diagonal of N in decreasing order
     diagN = @views opNreg.opN.diagN

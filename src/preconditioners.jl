@@ -19,7 +19,7 @@ Method of preconditioner: No preconditioner
 struct method_NoPreconditioner end
 
 allocate_preconditioner(method_P::method_NoPreconditioner, opNreg) = I     # Identity operator
-function update_preconditioner!(method_P::method_NoPreconditioner, Pinv, opN_Reg, adaptive_info...)
+function update_preconditioner!(method_P::method_NoPreconditioner, Pinv, opN_Reg, A, adaptive_info...)
     Pinv = I
     return nothing 
 end
