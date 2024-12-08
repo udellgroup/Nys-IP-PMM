@@ -71,7 +71,7 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
             # Construct A matrix for PartialCholesky
             if (typeof(method_P) <: method_PartialCholesky)
                 println("Construct constraint matrix A (for Partial Cholesky preconditioner) of ", problem_name, "...")
-                A = get_A_matrix(problem_type, problem_name)
+                A = get_A_matrix(problem_type)
                 println("Successfully constructed A for ", problem_name, ".")
             end
             
@@ -95,7 +95,7 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
             time_IPPMM = @elapsed begin
                 # Construct A matrix for PartialCholesky
                 if (typeof(method_P) <: method_PartialCholesky)
-                    A = get_A_matrix(problem_type, problem_name)
+                    A = get_A_matrix(problem_type)
                 end
                 
                 # Run IP-PMM

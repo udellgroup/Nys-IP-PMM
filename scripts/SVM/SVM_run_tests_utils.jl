@@ -164,7 +164,7 @@ function SVMdata2dualQP(X::AbstractMatrix{T}, y::AbstractVector{T}, τ::T) where
     return IPMInput(nrow, ncol, opA, b, c, IPMIndices(normal_ind, box_ind, free_ind), u, opQ, diagQ, :QP)
 end
 
-function get_A_matrix(problem_type::SVMProblem, problem_name::String)
+function get_A_matrix(problem_type::SVMProblem)
     @views X = problem_type.X
     @views y = problem_type.y
     m = size(X, 1)

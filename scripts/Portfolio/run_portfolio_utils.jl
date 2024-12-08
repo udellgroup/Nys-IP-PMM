@@ -1,5 +1,6 @@
 using RandomizedPreconditioners
 using JLD2
+using SparseArrays
 
 abstract type PortfolioProblem{T} <: AbstractIPMProblem end 
 
@@ -165,4 +166,22 @@ function get_csvnames(time_stamp::String, problem_type::PortfolioProblem, proble
     
     # Return two filenames ending with _history.csv and _status.csv
     return filestem * "_history.csv", filestem * "_status.csv"
+end
+
+
+function get_A_matrix(problem_type::PortfolioProblem{T})
+    # Extract data
+    @views Fᵀ = problem_type.Fᵀ
+    @views B = problem_type.B
+
+    # Problem dimensions
+    m, n = size(B)
+    k = size(Fᵀ, 1)
+
+    # Constraint matrix A
+    A = [ B spzeros(T, m, k) I;
+          ones(T, 1, n) spzeros(T, 1, k+m);
+          Fᵀ -I spzeros(T, k, m) ]
+        
+    return A
 end
