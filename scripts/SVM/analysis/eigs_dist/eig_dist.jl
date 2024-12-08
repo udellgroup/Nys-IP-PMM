@@ -10,9 +10,10 @@ include(scriptsdir("SVM/SVM_run_tests_utils.jl"))
 T = Float64
 problem_type = SVMProblem(T)
 problem_name = "CIFAR10_1000"
-X, y = load_data(problem_type, problem_name)
+total_iters = 15    # Total number of iterations (depends on the problem_name)
 
 # Construct A
+X, y = load_data(problem_type, problem_name)
 n, d = size(X)
 Id = Diagonal(ones(n))
 A = [Id -X * Diagonal(y); zeros(1, n) y']
@@ -21,16 +22,17 @@ A = [Id -X * Diagonal(y); zeros(1, n) y']
 tol = 1e-8
 
 # Initialize storage for effective dimensions
-iterations = 1:15
-effective_dimensions = zeros(length(iterations))
-eigvals_N = zeros(length(iterations), n+1)
+effective_dimensions = zeros(total_iters)
+eigvals_N = zeros(total_iters, n+1)
 
 # Loop through iterations
-for iter in iterations
+for iter in 1:total_iters
     @printf("Handling iteration %d\n", iter)
     
     # Load diagD and ρ
-    filepath = scriptsdir("SVM", "results", "CIFAR10_1000", "IPPMM", "diagD", "CIFAR10_1000_tol=$(tol)_iter=$(iter)_diagD.jld2")
+    filedir = scriptsdir("SVM", "analysis", "eigs_dist", "results_diagD")
+    diagD_filename = "diagD_tol=$(tol)_iter=$(iter).jld2"
+    filepath = joinpath(filedir, diagD_filename)
     diagD, δ = load(filepath, "diagD", "delta")
     D = Diagonal(diagD)
     
@@ -87,4 +89,4 @@ for (i, plt_iter) in enumerate(plot_iters)
         legend=false, markersize=2, markerstrokewidth=0, subplot=i+1,
         ylim=global_ylim)
 end
-savefig(joinpath(@__DIR__, "../..", "plots", "SVM", "CIFAR10_1000", "EigenvaluesN_multiiters.pdf"))
+savefig(joinpath(@__DIR__, "../..", "plots", "SVM", problem_name, "EigenvaluesN_multiiters.pdf"))

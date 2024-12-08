@@ -287,9 +287,14 @@ function IP_PMM_bdd(input::IPMInput{T};
                 update_preconditioner!(method_P, Pinv, opN_Reg, A, adaptive_info)
             end
 
-            # Save opN_Reg.opN.D.diag as a JLD2 file
-            filepath = scriptsdir("SVM", "results", "CIFAR10_1000", "IPPMM", "diagD", "CIFAR10_1000_tol=$(tol)_iter=$(iter)_diagD.jld2")
-            save(filepath, Dict("diagD" => opN_Reg.opN.D.diag, "delta" => δ))
+            # # Save opN_Reg.opN.D.diag as a JLD2 file
+            # filedir = scriptsdir("SVM", "analysis", "eigs_dist", "results_diagD")
+            # diagD_filename = "diagD_tol=$(tol)_iter=$(iter).jld2"
+            # if !ispath(filedir)
+            #     mkpath(filedir)
+            # end
+            # save(joinpath(filedir, diagD_filename), Dict("diagD" => opN_Reg.opN.D.diag, "delta" => δ))
+            
             # ================================================================================================================#
             # Mehrotra predictor-corrector.
             # ================================================================================================================#
