@@ -106,7 +106,7 @@ function update_diagN_opN!(opN::opNormalEquations{T}, A::AbstractMatrix{T}) wher
     # Make sure opN.sqrtD is updated
     @. opN.sqrtD.diag = sqrt(opN.D.diag)
     @inbounds @simd for ind in eachindex(diagN)
-        tmp .= A[ind, :]
+        @views tmp .= A[ind, :]
         lmul!(opN.sqrtD, tmp)
         diagN[ind] = dot(tmp, tmp)
     end
