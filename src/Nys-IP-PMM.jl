@@ -287,6 +287,9 @@ function IP_PMM_bdd(input::IPMInput{T};
                 update_preconditioner!(method_P, Pinv, opN_Reg, A, adaptive_info)
             end
 
+            # ================================================================================================================#
+            # Only for SVM anslysis experiments (eigs_dist): Save diagnosis file.
+            # ================================================================================================================#
             # # Save opN_Reg.opN.D.diag as a JLD2 file
             # filedir = scriptsdir("SVM", "analysis", "eigs_dist", "results_diagD")
             # diagD_filename = "diagD_tol=$(tol)_iter=$(iter).jld2"
@@ -294,6 +297,7 @@ function IP_PMM_bdd(input::IPMInput{T};
             #     mkpath(filedir)
             # end
             # save(joinpath(filedir, diagD_filename), Dict("diagD" => opN_Reg.opN.D.diag, "delta" => δ))
+            # ================================================================================================================#
             
             # ================================================================================================================#
             # Mehrotra predictor-corrector.

@@ -417,6 +417,7 @@ data/*
 scripts/SVM/results/*
 scripts/SVM/analysis/time_rank/raw_results/*
 scripts/SVM/analysis/time_rank/averaged_results/*
+scripts/SVM/analysis/eigs_dist/results_diagD/*
 scripts/SVM/summary/*
 scripts/Portfolio/results/*
 

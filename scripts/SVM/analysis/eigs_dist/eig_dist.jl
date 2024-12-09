@@ -1,9 +1,13 @@
+using DrWatson
+@quickactivate "."
 using LinearAlgebra
 using Plots
 using Measures
 using LaTeXStrings
 using JLD2  # Ensure you can load JLD2 files
 
+# Include the necessary files
+include(srcdir("Nys-IP-PMM.jl"))
 include(scriptsdir("SVM/SVM_run_tests_utils.jl"))
 
 # Inputs
@@ -11,6 +15,7 @@ T = Float64
 problem_type = SVMProblem(T)
 problem_name = "CIFAR10_1000"
 total_iters = 15    # Total number of iterations (depends on the problem_name)
+tol = 1e-8
 
 # Construct A
 X, y = load_data(problem_type, problem_name)
@@ -18,14 +23,12 @@ n, d = size(X)
 Id = Diagonal(ones(n))
 A = [Id -X * Diagonal(y); zeros(1, n) y']
 
-# Tolerance
-tol = 1e-8
 
-# Initialize storage for effective dimensions
+# Initialization
 effective_dimensions = zeros(total_iters)
 eigvals_N = zeros(total_iters, n+1)
 
-# Loop through iterations
+# Compute eigvals of N and effective dimension over iterations
 for iter in 1:total_iters
     @printf("Handling iteration %d\n", iter)
     
@@ -56,22 +59,24 @@ eigvals_AAT = sort(eigvals_AAT, rev=true)
 ## Plotting
 plot_font = "Computer Modern"
 default(fontfamily=plot_font)
+plot_dir = projectdir("plots", "SVM", "eigs_dist", problem_name)
+!ispath(plot_dir) ? mkpath(plot_dir) : nothing
 
 # Plot effective dimension over iterations
-plot(iterations, effective_dimensions, seriestype = :line, lw = 2, marker=(:circle,5),
+plot(1:total_iters, effective_dimensions, seriestype = :line, lw = 2, marker=(:circle,5),
     xlabel = "IP-PMM iteration", ylabel = "Effective Dimension", 
     title = "Effective dimension", legend = false)
-savefig(joinpath(@__DIR__, "../..", "plots", "SVM", "CIFAR10_1000", "eff_dim.pdf"))
+savefig(joinpath(plot_dir, "eff_dim.pdf"))
 
 # Plot eigenvalues of AAT
 plot(eigvals_AAT, seriestype = :scatter, yscale = :log10, 
             xlabel = "Index", ylabel = "Eigenvalues", 
             title = latexstring("Eigenvalues of \$AA^T\$"), 
             legend = false, markersize = 2, markerstrokewidth = 0)
-savefig(joinpath(@__DIR__, "../..", "plots", "SVM", "CIFAR10_1000", "EigenvaluesAAT.pdf"))
+savefig(joinpath(plot_dir, "EigenvaluesAAT.pdf"))
 
 
-# Plot eigenvalues of AAT and at 2 different iterations
+# Plot eigenvalues of AAT and those of Nₖ at 2 different iterations
 plot_iters = [12, 15]
 global_ylim_log = log10.(extrema(vcat(eigvals_N[plot_iters, :])))
 global_ylim = (10^floor(global_ylim_log[1]-1), 10^ceil(global_ylim_log[2]+1))
@@ -89,4 +94,4 @@ for (i, plt_iter) in enumerate(plot_iters)
         legend=false, markersize=2, markerstrokewidth=0, subplot=i+1,
         ylim=global_ylim)
 end
-savefig(joinpath(@__DIR__, "../..", "plots", "SVM", problem_name, "EigenvaluesN_multiiters.pdf"))
+savefig(joinpath(plot_dir, "EigenvaluesN_multiiters.pdf"))
