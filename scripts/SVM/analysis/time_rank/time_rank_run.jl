@@ -11,7 +11,7 @@ include(scriptsdir("SVM/SVM_run_tests_utils.jl"))
 Random.seed!(123)
 
 # Define methods
-ranks = [200, 300]#[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
+ranks = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
 methods = vcat(
     [method_Nystrom(rank, false) for rank in ranks], 
     [method_PartialCholesky(rank) for rank in ranks]
