@@ -1,65 +1,21 @@
+using DrWatson
+@quickactivate "."
 using CSV
 using DataFrames
 using Printf
 
-function generate_latex_table(dataname::String, csv_path::String)
-    # Read the CSV file into a DataFrame
-    data = CSV.read(csv_path, DataFrame)
-    
-    # Extract the columns "rho" and "delta"
-    iter = data.iter
-    rho = data.rho
-    delta = data.delta
-    
-    # Generate the LaTeX code
-    latex_table = """
-    \\begin{table}[H]
-    \\centering
-    \\begin{tabular}{ccc}
-    \\toprule
-    & \\multicolumn{2}{c}{\\textbf{$(dataname)}} \\\\
-    \\cmidrule(lr){2-3}
-    Iteration \\(k\\) & Primal reg. \\(\\rho_k\\) & Dual reg. \\(\\delta_k\\) \\\\
-    \\midrule
-    """
-    
-    # Format each row with scientific notation
-    for i in 1:length(iter)
-        rho_str = @sprintf("%.2e", rho[i])    # Format rho in scientific notation
-        delta_str = @sprintf("%.2e", delta[i]) # Format delta in scientific notation
-        latex_table *= "    $(iter[i]) & \\num{$rho_str} & \\num{$delta_str} \\\\\n"
-    end
-    
-    latex_table *= """
-    \\bottomrule
-    \\end{tabular}
-    \\caption{Regularization parameters in Nys-IP-PMM.}
-    \\label{tab:reg}
-    \\end{table}
-    """
-    
-    # Return the LaTeX table as a string
-    return latex_table
-end
-
-
-function generate_latex_table_strings(dataset_names::Vector{String}, csv_paths::Vector{String})
-    # Ensure the lengths of dataset_names and csv_paths match
-    if length(dataset_names) != length(csv_paths)
-        error("The number of dataset names and paths must match!")
-    end
-
+function generate_latex_table_strings(dataset_names::Vector{String}, name2info::Dict{String, Dict{String, String}})
     # Determine the number of tables needed
-    num_datasets_per_table = 5
-    num_tables = ceil(Int, length(dataset_names) / num_datasets_per_table)
+    n_datasets = length(dataset_names)
+    num_datasets_per_table = 6
+    num_tables = ceil(Int, n_datasets / num_datasets_per_table)
 
     table_strings = []
-
     for table_idx in 1:num_tables
         # Get the range of datasets for this table
-        dataset_range = (num_datasets_per_table * (table_idx - 1) + 1):min(num_datasets_per_table * table_idx, length(dataset_names))
+        dataset_range = (num_datasets_per_table * (table_idx - 1) + 1):min(num_datasets_per_table * table_idx, n_datasets)
         datasets_in_table = dataset_names[dataset_range]
-        paths_in_table = csv_paths[dataset_range]
+        paths_in_table = [scriptsdir(name2info[dataset_name]["problemtype"], "results", dataset_name, "IPPMM", name2info[dataset_name]["filename"]) for dataset_name in datasets_in_table]
 
         # Read the data for each dataset
         data = [CSV.read(path, DataFrame) for path in paths_in_table]
@@ -80,7 +36,7 @@ function generate_latex_table_strings(dataset_names::Vector{String}, csv_paths::
 
         # Add the dataset names as supercolumns
         for dataset in datasets_in_table
-            latex_table *= " & \\multicolumn{2}{c}{\\textbf{$dataset}}"
+            latex_table *= " & \\multicolumn{2}{c}{$(name2info[dataset]["tablename"])}"
         end
         latex_table *= " \\\\\n"
 
@@ -135,29 +91,67 @@ function generate_latex_table_strings(dataset_names::Vector{String}, csv_paths::
 end
 
 ##
-csv_paths = [
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/CIFAR10/IPPMM/ts=2024-12-07--01:26:18_prob=CIFAR10_pc=Nystrom_rank=200_tol=1e-04_history.csv",
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/RNASeq/IPPMM/ts=2024-12-07--00:33:49_prob=RNASeq_pc=Nystrom_rank=200_tol=1e-04_history.csv",
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/STL10/IPPMM/ts=2024-12-07--09:48:04_prob=STL10_pc=Nystrom_rank=800_tol=1e-04_history.csv",
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/SensIT/IPPMM/ts=2024-12-07--01:26:59_prob=SensIT_pc=Nystrom_rank=50_tol=1e-04_history.csv",
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/sector/IPPMM/ts=2024-12-07--00:34:19_prob=sector_pc=Nystrom_rank=20_tol=1e-04_history.csv",
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/arcene/IPPMM/ts=2024-12-07--00:34:22_prob=arcene_pc=Nystrom_rank=20_tol=1e-04_history.csv",
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/dexter/IPPMM/ts=2024-12-07--00:32:22_prob=dexter_pc=Nystrom_rank=10_tol=1e-04_history.csv",
-    "/Users/ycchu/Documents/ResearchPapers/NysIPPMM/code/Nys-IP-PMM_publish/scripts/SVM/results/CIFAR10_1000/IPPMM/ts=2024-12-06--23:24:18_prob=CIFAR10_1000_pc=Nystrom_rank=200_tol=1e-08_history.csv"
-]
+name2info = Dict(
+    "CIFAR10" => Dict(
+        "filename" => "ts=2024-12-07--01:26:18_prob=CIFAR10_pc=Nystrom_rank=200_tol=1e-04_history.csv",
+        "problemtype" => "SVM",
+        "tablename" => "\\textbf{CIFAR10}"
+    ),
+    "RNASeq" => Dict(
+        "filename" => "ts=2024-12-07--00:33:49_prob=RNASeq_pc=Nystrom_rank=200_tol=1e-04_history.csv",
+        "problemtype" => "SVM",
+        "tablename" => "\\textbf{RNASeq}"
+    ),
+    "STL10" => Dict(
+        "filename" => "ts=2024-12-07--09:48:04_prob=STL10_pc=Nystrom_rank=800_tol=1e-04_history.csv",
+        "problemtype" => "SVM",
+        "tablename" => "\\textbf{STL10}"
+    ),
+    "SensIT" => Dict(
+        "filename" => "ts=2024-12-07--01:26:59_prob=SensIT_pc=Nystrom_rank=50_tol=1e-04_history.csv",
+        "problemtype" => "SVM",
+        "tablename" => "\\textbf{SensIT}"
+    ),
+    "sector" => Dict(
+        "filename" => "ts=2024-12-07--00:34:19_prob=sector_pc=Nystrom_rank=20_tol=1e-04_history.csv",
+        "problemtype" => "SVM",
+        "tablename" => "\\textbf{sector}"
+    ),
+    "arcene" => Dict(
+        "filename" => "ts=2024-12-07--00:34:22_prob=arcene_pc=Nystrom_rank=20_tol=1e-04_history.csv",
+        "problemtype" => "SVM",
+        "tablename" => "\\textbf{arcene}"
+    ),
+    "dexter" => Dict(
+        "filename" => "ts=2024-12-07--00:32:22_prob=dexter_pc=Nystrom_rank=10_tol=1e-04_history.csv",
+        "problemtype" => "SVM",
+        "tablename" => "\\textbf{dexter}"
+    ),
+    "CIFAR10_1000" => Dict(
+        "filename" => "ts=2024-12-06--23:24:18_prob=CIFAR10_1000_pc=Nystrom_rank=200_tol=1e-08_history.csv",
+        "problemtype" => "SVM",
+        "tablename" => "\\begin{tabular}[c]{@{}c@{}}\\textbf{CIFAR10\\_1000} \\\\ \\textbf{(section 5.2.2)}\\end{tabular}"
+    ),
+    "risk_model" => Dict(
+        "filename" => "ts=2024-12-08--11:45:02_prob=risk_model_m=500_n=800_k=10_pc=Nystrom_rank=20_tol=1e-08_history.csv",
+        "problemtype" => "Portfolio",
+        "tablename" => "\\begin{tabular}[c]{@{}c@{}}\\textbf{Portfolio} \\\\ \\textbf{(section 5.1)}\\end{tabular}"
+    ),
+)
 
 dataset_names = [
-    "CIFAR10",
-    "RNASeq",
-    "STL10",
-    "SensIT",
-    "sector",
-    "arcene",
-    "dexter",
-    "CIFAR10-1000 (section 5.2.2)"
+    "risk_model",
+    "CIFAR10_1000",
+    "CIFAR10", 
+    "RNASeq", 
+    "STL10", 
+    "SensIT", 
+    "sector", 
+    "arcene", 
+    "dexter", 
 ]
 
-tables = generate_latex_table_strings(dataset_names, csv_paths)
+tables = generate_latex_table_strings(dataset_names, name2info)
 
 for (i, table) in enumerate(tables)
     println("Table $i")
