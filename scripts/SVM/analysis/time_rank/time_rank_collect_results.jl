@@ -2,6 +2,7 @@ using DrWatson
 @quickactivate "."
 using JLD2
 using CSV, Glob
+using Dates
 using DataFrames
 using Statistics
 
@@ -35,8 +36,14 @@ averaged_df = combine(groupby(round_df, [:Preconditioner, :rank]),
                         :TotalElapsedCGsolving => mean => :TotalElapsedCGsolving)
 
 
-# Save the averaged results to a csv file
-filedir = scriptsdir("SVM", "analysis", "time_rank", "averaged_results")
-!ispath(filedir) ? mkpath(filedir) : nothing
-filename_averaged = problem_name * "_averaged_time.csv"
-CSV.write(joinpath(filedir, filename_averaged), averaged_df)
+# Save the averaged results to csv files in two directories
+filedirs = [
+    scriptsdir("SVM", "analysis", "time_rank", "averaged_results"),
+    projectdir("notebooks", "SVM_analysis", "time_rank"),
+]
+time_stamp = Dates.format(now(), "yyyy-mm-dd--HH:MM:SS")
+filename_averaged = time_stamp * "_" * problem_name * "_averaged_time.csv"
+for dir in filedirs
+    !ispath(dir) ? mkpath(dir) : nothing
+    CSV.write(joinpath(dir, filename_averaged), averaged_df)
+end
