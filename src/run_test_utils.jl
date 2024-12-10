@@ -14,7 +14,7 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
                     problem_name::String, 
                     method_P_list::Vector, tol=1e-4; 
                     krylov_tol = 1e-6, maxit::Int = 25, 
-                    timed::Bool = true, saved::Bool = true, savedir::Union{String, Nothing} = nothing)
+                    timed::Bool = true, saved::Bool = true, savedir::Union{String, Nothing} = nothing, init_Pinv = nothing)
     println("-"^110)
     
     # Do not time if saved is false
@@ -39,7 +39,7 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
     @printf("Obtaining initial point... ")
     initpt_info = IPPMM_InitStatus()   # Initialize cgiter = 0, time = 0.0
     initial_point = IPMVariables{T}(nrow, ncol)
-    initpt_info.cgiter = obtain_initial_point!(initial_point, input; cg_solver=cg_solver)
+    initpt_info.cgiter = obtain_initial_point!(initial_point, input; cg_solver=cg_solver, Pinv = init_Pinv)
     println("Successfully obtained initial point.")
 
     # Get time for obtaining initial point

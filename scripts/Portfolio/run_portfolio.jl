@@ -1,5 +1,6 @@
 using DrWatson
 @quickactivate "."
+using LinearAlgebra
 using Random
 using Printf
 
@@ -26,4 +27,4 @@ problem_type = risk_model
 problem_name = "risk_model"
 tol=1e-8
 methods = [method_Nystrom(20, false), method_NoPreconditioner(), method_PartialCholesky(20)]
-vars = test_IPPMM(problem_type, problem_name, methods, tol, maxit = 40);
+vars = test_IPPMM(problem_type, problem_name, methods, tol, maxit = 40, init_Pinv = I);
