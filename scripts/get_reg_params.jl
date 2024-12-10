@@ -7,7 +7,7 @@ using Printf
 function generate_latex_table_strings(dataset_names::Vector{String}, name2info::Dict{String, Dict{String, String}})
     # Determine the number of tables needed
     n_datasets = length(dataset_names)
-    num_datasets_per_table = 6
+    num_datasets_per_table = 5
     num_tables = ceil(Int, n_datasets / num_datasets_per_table)
 
     table_strings = []
@@ -22,7 +22,7 @@ function generate_latex_table_strings(dataset_names::Vector{String}, name2info::
 
         # Determine the maximum number of iterations among the datasets
         max_iterations = maximum([nrow(d) for d in data])
-        iter = 1:max_iterations
+        iter = 0:max_iterations-1
 
         # Generate the LaTeX table header
         latex_table = """
@@ -142,11 +142,11 @@ name2info = Dict(
 dataset_names = [
     "risk_model",
     "CIFAR10_1000",
-    "CIFAR10", 
     "RNASeq", 
-    "STL10", 
     "SensIT", 
     "sector", 
+    "CIFAR10", 
+    "STL10", 
     "arcene", 
     "dexter", 
 ]
