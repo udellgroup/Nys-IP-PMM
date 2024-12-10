@@ -2,6 +2,7 @@ using DrWatson
 @quickactivate "."
 using CSV
 using DataFrames
+using Glob
 using Printf
 
 function generate_latex_table_strings(dataset_names::Vector{String}, name2info::Dict{String, Dict{String, String}})
@@ -15,14 +16,19 @@ function generate_latex_table_strings(dataset_names::Vector{String}, name2info::
         # Get the range of datasets for this table
         dataset_range = (num_datasets_per_table * (table_idx - 1) + 1):min(num_datasets_per_table * table_idx, n_datasets)
         datasets_in_table = dataset_names[dataset_range]
-        paths_in_table = [scriptsdir(name2info[dataset_name]["problemtype"], "results", dataset_name, "IPPMM", name2info[dataset_name]["filename"]) for dataset_name in datasets_in_table]
+        paths_in_table = [ 
+            joinpath(
+                get_results_csv_dir(name2info[dataset_name]["problemtype"], dataset_name), 
+                get_latest_history_csv_filename(name2info[dataset_name]["problemtype"], dataset_name)
+            ) for dataset_name in datasets_in_table
+        ]
 
         # Read the data for each dataset
         data = [CSV.read(path, DataFrame) for path in paths_in_table]
 
         # Determine the maximum number of iterations among the datasets
-        max_iterations = maximum([nrow(d) for d in data])
-        iter = 0:max_iterations-1
+        max_rows = maximum([nrow(d) for d in data])
+        rows = 1:max_rows
 
         # Generate the LaTeX table header
         latex_table = """
@@ -58,10 +64,11 @@ function generate_latex_table_strings(dataset_names::Vector{String}, name2info::
         latex_table *= " \\\\\n\\midrule\n"
 
         # Add the data rows
-        for i in iter
-            latex_table *= "    $i"
+        for i in rows
+            latex_table *= "    $(i-1)"
             for j in 1:length(datasets_in_table)
-                if i <= nrow(data[j])  # If the dataset has data for this iteration
+                curr_rows = nrow(data[j])
+                if i <= curr_rows  # If the dataset has data for this iteration
                     rho_str = @sprintf("%.2e", data[j].rho[i])
                     delta_str = @sprintf("%.2e", data[j].delta[i])
                     latex_table *= " & \\num{$rho_str} & \\num{$delta_str}"
@@ -78,7 +85,7 @@ function generate_latex_table_strings(dataset_names::Vector{String}, name2info::
         \\end{tabular}
         \\endgroup
         }
-        \\caption{Regularization parameters for SVM datasets.}
+        \\caption{Regularization parameters for for experiments in \\cref{sec:numerical-exp}.}
         \\label{tab:reg_table_$(table_idx)}
         \\end{table}
         """
@@ -90,50 +97,60 @@ function generate_latex_table_strings(dataset_names::Vector{String}, name2info::
     return table_strings
 end
 
+get_results_csv_dir(problem_type::String, problem_name::String) = scriptsdir(problem_type, "results", problem_name, "IPPMM")
+
+function get_latest_history_csv_filename(problem_type::String, problem_name::String)
+    # Get the directory containing the results
+    results_dir = get_results_csv_dir(problem_type, problem_name)
+    
+    # Define Glob matcher for history.csv files
+    matcher = Glob.GlobMatch("*" * problem_name * "*Nystrom*_history.csv")
+
+    # Get all history files under results_dir/name/algorithm
+    matched_paths = readdir(matcher, results_dir)
+    @assert !isempty(matched_paths) "No history files found for $problem_name"
+
+    # Find the latest file
+    latest_idx = argmax(mtime.(matched_paths))
+    latest_file = matched_paths[latest_idx]
+
+    return basename(latest_file)
+end
 ##
 name2info = Dict(
     "CIFAR10" => Dict(
-        "filename" => "ts=2024-12-07--01:26:18_prob=CIFAR10_pc=Nystrom_rank=200_tol=1e-04_history.csv",
         "problemtype" => "SVM",
         "tablename" => "\\textbf{CIFAR10}"
     ),
     "RNASeq" => Dict(
-        "filename" => "ts=2024-12-07--00:33:49_prob=RNASeq_pc=Nystrom_rank=200_tol=1e-04_history.csv",
         "problemtype" => "SVM",
         "tablename" => "\\textbf{RNASeq}"
     ),
     "STL10" => Dict(
-        "filename" => "ts=2024-12-07--09:48:04_prob=STL10_pc=Nystrom_rank=800_tol=1e-04_history.csv",
         "problemtype" => "SVM",
         "tablename" => "\\textbf{STL10}"
     ),
     "SensIT" => Dict(
-        "filename" => "ts=2024-12-07--01:26:59_prob=SensIT_pc=Nystrom_rank=50_tol=1e-04_history.csv",
         "problemtype" => "SVM",
         "tablename" => "\\textbf{SensIT}"
     ),
     "sector" => Dict(
-        "filename" => "ts=2024-12-07--00:34:19_prob=sector_pc=Nystrom_rank=20_tol=1e-04_history.csv",
         "problemtype" => "SVM",
         "tablename" => "\\textbf{sector}"
     ),
     "arcene" => Dict(
-        "filename" => "ts=2024-12-07--00:34:22_prob=arcene_pc=Nystrom_rank=20_tol=1e-04_history.csv",
         "problemtype" => "SVM",
         "tablename" => "\\textbf{arcene}"
     ),
     "dexter" => Dict(
-        "filename" => "ts=2024-12-07--00:32:22_prob=dexter_pc=Nystrom_rank=10_tol=1e-04_history.csv",
         "problemtype" => "SVM",
         "tablename" => "\\textbf{dexter}"
     ),
     "CIFAR10_1000" => Dict(
-        "filename" => "ts=2024-12-06--23:24:18_prob=CIFAR10_1000_pc=Nystrom_rank=200_tol=1e-08_history.csv",
         "problemtype" => "SVM",
         "tablename" => "\\begin{tabular}[c]{@{}c@{}}\\textbf{CIFAR10\\_1000} \\\\ \\textbf{(section 5.2.2)}\\end{tabular}"
     ),
     "risk_model" => Dict(
-        "filename" => "ts=2024-12-08--11:45:02_prob=risk_model_m=500_n=800_k=10_pc=Nystrom_rank=20_tol=1e-08_history.csv",
         "problemtype" => "Portfolio",
         "tablename" => "\\begin{tabular}[c]{@{}c@{}}\\textbf{Portfolio} \\\\ \\textbf{(section 5.1)}\\end{tabular}"
     ),
