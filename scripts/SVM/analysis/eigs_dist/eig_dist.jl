@@ -76,22 +76,29 @@ plot(eigvals_AAT, seriestype = :scatter, yscale = :log10,
 savefig(joinpath(plot_dir, "EigenvaluesAAT.pdf"))
 
 
-# Plot eigenvalues of AAT and those of Nₖ at 2 different iterations
+## Plot eigenvalues of AAT and those of Nₖ at 2 different iterations
+# Define global y-axis limits
 plot_iters = [12, 15]
 global_ylim_log = log10.(extrema(vcat(eigvals_N[plot_iters, :])))
 global_ylim = (10^floor(global_ylim_log[1]-1), 10^ceil(global_ylim_log[2]+1))
-plt = plot(layout=(1, 3), size=(1200, 400), margin=10mm)  # 1 row, 3 columns
+yticks_positions = [1, 1e5, 1e10, 1e15]  # Example positions
+yticks_labels = [L"10^{0}", L"10^{5}", L"10^{10}", L"10^{15}"]  # Corresponding labels
+
+plt = plot(layout=(1, 3), size=(1200, 400), left_margin=10mm, bottom_margin=10mm)  # 1 row, 3 columns
+# Plot eigenvalues of AAT
 plot!(plt, eigvals_AAT, seriestype=:scatter, yscale=:log10, 
         xlabel="Index", ylabel="Eigenvalues",
-        title=latexstring("\$AA^T\$"), 
+        title=L"$AA^T$", 
         legend=false, markersize=2, markerstrokewidth=0, subplot=1,
-        ylim=global_ylim)
+        ylim=global_ylim, yticks=(yticks_positions, yticks_labels))
+
+# Plot eigenvalues of Nₖ at 2 different iterations
 for (i, plt_iter) in enumerate(plot_iters)
     plot!(plt, eigvals_N[plt_iter, :], seriestype=:scatter, yscale=:log10, 
-        xlabel="Index", 
-        # ylabel=i == 1 ? "Eigenvalues" : "",
-        title="Iteration $(plt_iter)", 
-        legend=false, markersize=2, markerstrokewidth=0, subplot=i+1,
-        ylim=global_ylim)
+            xlabel="Index", 
+            title=L"$N_k$ $(k = %$(plt_iter))$", 
+            legend=false, markersize=2, markerstrokewidth=0, subplot=i+1,
+            ylim=global_ylim, yticks=(yticks_positions, yticks_labels))
 end
+
 savefig(joinpath(plot_dir, "EigenvaluesN_multiiters.pdf"))
