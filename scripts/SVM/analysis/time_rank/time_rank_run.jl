@@ -14,7 +14,7 @@ Random.seed!(123)
 ranks = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
 methods = vcat(
     [method_Nystrom(rank, false) for rank in ranks], 
-    [method_PartialCholesky(rank) for rank in ranks]
+    [method_PartialCholesky(rank, true) for rank in ranks]
 )
 problem_name = "RNASeq"
 

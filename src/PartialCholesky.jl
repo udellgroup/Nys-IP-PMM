@@ -45,8 +45,10 @@ Method of preconditioner: Partial Cholesky preconditioner
 """
 mutable struct method_PartialCholesky{T}
     k_steps::Int
-    method_PartialCholesky(k_steps::Int; T::DataType = Float64) = new{T}(k_steps)
+    access_A::Bool
+    method_PartialCholesky(k_steps::Int, access_A::Bool; T::DataType = Float64) = new{T}(k_steps, access_A)
 end
+method_PartialCholesky(k_steps::Int) = method_PartialCholesky(k_steps, false)
 
 function allocate_preconditioner(method_P::method_PartialCholesky{T}, opNreg) where T
     return PartialCholesky(size(opNreg, 1), method_P.k_steps; T = T)

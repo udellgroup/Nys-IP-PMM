@@ -14,7 +14,8 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
                     problem_name::String, 
                     method_P_list::Vector, tol=1e-4; 
                     krylov_tol = 1e-6, maxit::Int = 25, 
-                    timed::Bool = true, saved::Bool = true, savedir::Union{String, Nothing} = nothing, init_Pinv = nothing)
+                    timed::Bool = true, saved::Bool = true, savedir::Union{String, Nothing} = nothing, 
+                    init_Pinv = nothing)
     println("-"^110)
     
     # Do not time if saved is false
@@ -70,7 +71,7 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
         print_running_info(problem_name, method_P)
         time_IPPMM = @elapsed begin
             # Construct A matrix for PartialCholesky
-            if (typeof(method_P) <: method_PartialCholesky)
+            if (typeof(method_P) <: method_PartialCholesky) && (method_P.access_A)
                 println("Construct constraint matrix A (for Partial Cholesky preconditioner) of ", problem_name, "...")
                 A = get_A_matrix(problem_type)
                 println("Successfully constructed A for ", problem_name, ".")
@@ -95,7 +96,7 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
             # Second run to time
             time_IPPMM = @elapsed begin
                 # Construct A matrix for PartialCholesky
-                if (typeof(method_P) <: method_PartialCholesky)
+                if (typeof(method_P) <: method_PartialCholesky) && (method_P.access_A)
                     A = get_A_matrix(problem_type)
                 end
                 
