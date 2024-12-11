@@ -3,8 +3,6 @@ using DrWatson
 using Random
 using Printf
 
-using JLD2
-
 # Include the necessary files
 include(srcdir("Nys-IP-PMM.jl"))
 include(scriptsdir("SVM/SVM_run_tests_utils.jl"))
@@ -15,7 +13,6 @@ Random.seed!(1234)
 # Load the datanames and methods
 include(scriptsdir("SVM/SVM_run_tests_data2methods.jl"))
 problem_names_list = keys(data2methods)
-# problem_names_list = ["STL10"]
 
 # Set up the problem type
 T = Float64
