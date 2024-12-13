@@ -21,7 +21,7 @@ end
 
 function obtain_initial_point!(initial_point::IPMVariables{T}, input::IPMInput{T};
                                cg_solver::CgSolver{T, T, Vector{T}} = nothing, 
-                               sketchsize::Int = -1, 
+                               sketchsize::Int = -1, Pinv = nothing,
                                printlevel::Int = 1, krylov_tol::Real = 1e-6) where {T}
     # Unwrap input
     nrow, ncol = input.nrow, input.ncol
@@ -70,8 +70,11 @@ function obtain_initial_point!(initial_point::IPMVariables{T}, input::IPMInput{T
 
     opAT = @views opA'
     opAAT = opA * opAT
-    N̂ = NystromSketch(opAAT, sketchsize)
-    Pinv = NystromPreconditionerInverse(N̂, δ)
+
+    if isnothing(Pinv)
+        N̂ = NystromSketch(opAAT, sketchsize)
+        Pinv = NystromPreconditionerInverse(N̂, δ)
+    end
 
     # x = ū/2 + Aᵀ(AAᵀ + δI)⁻¹(b - A ū/2) where ū is the embedding of u into Rⁿ
     ū = zeros(T, n)

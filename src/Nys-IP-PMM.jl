@@ -24,22 +24,26 @@ function IP_PMM_bdd(input::IPMInput{T};
                     params::IPPMMParams = IPPMMParams(T),
                     method_P = method_NoPreconditioner{T}(),
                     tol::T = 1e-6, maxit::Int64 = 30,
-                    pc::Bool = false, printlevel::Int64 = 1) where T <: Number
+                    pc::Bool = false, printlevel::Int64 = 1,
+                    A::Union{AbstractMatrix{T}, Nothing} = nothing) where T <: Number
     cumulative_time = 0.0
     cumulative_time += @elapsed begin
     # Create dict for storing results
-    history = OrderedDict("iter"                    => Int[], 
-                          "primal_feasibility"      => Float64[], 
-                          "dual_feasibility"        => Float64[], 
-                          "optimality_gap"          => Float64[],
-                          "inner_iter_predictor"    => Int[], 
-                          "inner_iter_corrector"    => Int[],
-                          "krylov_tol"              => Float64[], 
-                          "rank"                    => Int[],
-                          "construct_precond_elapsed" => Float64[],
-                          "CG_solving_elapsed"    => Float64[],
-                          "cumulative_time"        => Float64[]
-                          )
+    history = OrderedDict(
+        "iter"                    => Int[], 
+        "primal_feasibility"      => Float64[], 
+        "dual_feasibility"        => Float64[], 
+        "optimality_gap"          => Float64[],
+        "inner_iter_predictor"    => Int[], 
+        "inner_iter_corrector"    => Int[],
+        "krylov_tol"              => Float64[], 
+        "rank"                    => Int[],
+        "construct_precond_elapsed" => Float64[],
+        "CG_solving_elapsed"      => Float64[],
+        "cumulative_time"         => Float64[],
+        "rho"                     => Float64[],
+        "delta"                   => Float64[]
+    )
     # Unwrap input
     m, n = input.nrow, input.ncol
     opA = @views input.opA
@@ -67,7 +71,7 @@ function IP_PMM_bdd(input::IPMInput{T};
     end
 
     normal_eq && @assert !isempty(diagQ) "For normal equation, Q should be diagonal and diagQ must be provided."
-    
+
     # Check if the input is valid
     dim_checking(m, n, c, opQ, b, u, indices)
     
@@ -199,6 +203,43 @@ function IP_PMM_bdd(input::IPMInput{T};
                     break;
                 end
             end
+            # ================================================================================================================#
+            # Print initial iteration (iter = 0) output AND push to history
+            # ---------------------------------------------------------------------------------------------------------------- #
+            if iter == 0
+                pres_inf = norm(nr_res_p)/max(100,norm(b))
+                dres_inf = norm(nr_res_d)/max(100,norm(c))
+                μ = compute_μ(vars, indices)
+                print_output(pl, pc, method_P, iter , pres_inf, dres_inf, μ, nothing, nothing, nothing, nothing, ρ, δ);
+                
+                # Update the history dictionary
+                push!(history["iter"], iter)
+                push!(history["primal_feasibility"], pres_inf)
+                push!(history["dual_feasibility"], dres_inf)
+                push!(history["optimality_gap"], μ)
+                if pc == true
+                    push!(history["inner_iter_predictor"], 0)
+                    push!(history["inner_iter_corrector"], 0)
+                else
+                    push!(history["inner_iter_predictor"], 0)
+                    push!(history["inner_iter_corrector"], 0)
+                end
+                push!(history["krylov_tol"], 0.0)
+                push!(history["rho"], ρ)
+                push!(history["delta"], δ)
+    
+                if (type_method_P <: method_Nystrom)
+                    push!(history["rank"], 0)
+                elseif (type_method_P <: method_PartialCholesky)
+                    push!(history["rank"], 0)
+                elseif (type_method_P <: method_NoPreconditioner)
+                    push!(history["rank"], 0)
+                end
+                push!(history["construct_precond_elapsed"], 0.0)
+                push!(history["CG_solving_elapsed"], 0.0)
+                push!(history["cumulative_time"], 0.0)
+            end
+
             # ===============================================================================================================
             
             y_minus_λ = y - λ
@@ -243,8 +284,21 @@ function IP_PMM_bdd(input::IPMInput{T};
             # ---------------------------------------------------------------------------------------------------------------- #
             construct_precond_elapsed += @elapsed begin  
                 update_opN_Reg!(opN_Reg, diagQ, ρ, δ,  vars, indices)
-                update_preconditioner!(method_P, Pinv, opN_Reg, adaptive_info)
+                update_preconditioner!(method_P, Pinv, opN_Reg, A, adaptive_info)
             end
+
+            # ================================================================================================================#
+            # Only for SVM anslysis experiments (eigs_dist): Save diagnosis file.
+            # ================================================================================================================#
+            # # Save opN_Reg.opN.D.diag as a JLD2 file
+            # filedir = scriptsdir("SVM", "analysis", "eigs_dist", "results_diagD")
+            # diagD_filename = "diagD_tol=$(tol)_iter=$(iter).jld2"
+            # if !ispath(filedir)
+            #     mkpath(filedir)
+            # end
+            # save(joinpath(filedir, diagD_filename), Dict("diagD" => opN_Reg.opN.D.diag, "delta" => δ))
+            # ================================================================================================================#
+            
             # ================================================================================================================#
             # Mehrotra predictor-corrector.
             # ================================================================================================================#
@@ -411,7 +465,7 @@ function IP_PMM_bdd(input::IPMInput{T};
             # ---------------------------------------------------------------------------------------------------------------- #
             pres_inf = norm(new_nr_res_p)/max(100,norm(b))
             dres_inf = norm(new_nr_res_d)/max(100,norm(c))  
-            print_output(pl, pc, method_P, iter , pres_inf, dres_inf, μ, inneriter, krylov_tol, σ, α_primal, α_dual);
+            print_output(pl, pc, method_P, iter , pres_inf, dres_inf, μ, inneriter, krylov_tol, α_primal, α_dual, ρ, δ);
 
         end
         # ================================================================================================================ #
@@ -429,6 +483,8 @@ function IP_PMM_bdd(input::IPMInput{T};
             push!(history["inner_iter_corrector"], 0)
         end
         push!(history["krylov_tol"], krylov_tol)
+        push!(history["rho"], ρ)
+        push!(history["delta"], δ)
 
         if (type_method_P <: method_Nystrom)
             push!(history["rank"], method_P.sketchsize)

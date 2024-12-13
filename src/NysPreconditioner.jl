@@ -284,8 +284,8 @@ function allocate_preconditioner(method_P::method_Nystrom{T}, opNreg) where T
     return NysPreconditionerInverse(method_P.Nys_sketch, zero(T))
 end
 
-function update_preconditioner!(method_P::method_Nystrom, Pinv::NysPreconditionerInverse, opN_Reg::opRegNormalEquations, 
-                                adaptive_info)
+function update_preconditioner!(method_P::method_Nystrom, Pinv::NysPreconditionerInverse, opN_Reg::opRegNormalEquations,
+                                A, adaptive_info)
     
     # Update sketchsize if adaptive_sketch is true and adaptive_info is not nothing
     if method_P.adaptive_sketch && !isnothing(adaptive_info)

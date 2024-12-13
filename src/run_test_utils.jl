@@ -13,7 +13,9 @@ Run test function for IPPMM.
 function test_IPPMM(problem_type::AbstractIPMProblem, 
                     problem_name::String, 
                     method_P_list::Vector, tol=1e-4; 
-                    krylov_tol = 1e-6, maxit::Int = 25, timed::Bool = true, saved::Bool = true)
+                    krylov_tol = 1e-6, maxit::Int = 25, 
+                    timed::Bool = true, saved::Bool = true, savedir::Union{String, Nothing} = nothing, 
+                    init_Pinv = nothing)
     println("-"^110)
     
     # Do not time if saved is false
@@ -38,7 +40,7 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
     @printf("Obtaining initial point... ")
     initpt_info = IPPMM_InitStatus()   # Initialize cgiter = 0, time = 0.0
     initial_point = IPMVariables{T}(nrow, ncol)
-    initpt_info.cgiter = obtain_initial_point!(initial_point, input; cg_solver=cg_solver)
+    initpt_info.cgiter = obtain_initial_point!(initial_point, input; cg_solver=cg_solver, Pinv = init_Pinv)
     println("Successfully obtained initial point.")
 
     # Get time for obtaining initial point
@@ -62,13 +64,23 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
 
         # Record the start sketchsize for Nystrom
         start_sketchsize = (typeof(method_P) <: method_Nystrom) ? method_P.sketchsize : 0
+        # Initialize A for PartialCholesky
+        A = nothing
                 
         # First run to get status
         print_running_info(problem_name, method_P)
         time_IPPMM = @elapsed begin
+            # Construct A matrix for PartialCholesky
+            if (typeof(method_P) <: method_PartialCholesky) && (method_P.access_A)
+                println("Construct constraint matrix A (for Partial Cholesky preconditioner) of ", problem_name, "...")
+                A = get_A_matrix(problem_type)
+                println("Successfully constructed A for ", problem_name, ".")
+            end
+            
+            # Run IP-PMM
             history, opt, vars = IP_PMM_bdd(input; initial_point=initial_point, params=params,
                                             method_P=method_P, 
-                                            tol=tol, maxit = maxit, pc=true, printlevel = 2);
+                                            tol=tol, maxit = maxit, pc=true, printlevel = 3, A = A);
         end
         println("First run takes ", time_IPPMM, " seconds.\n")
 
@@ -83,9 +95,15 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
 
             # Second run to time
             time_IPPMM = @elapsed begin
+                # Construct A matrix for PartialCholesky
+                if (typeof(method_P) <: method_PartialCholesky) && (method_P.access_A)
+                    A = get_A_matrix(problem_type)
+                end
+                
+                # Run IP-PMM
                 history, opt, vars = IP_PMM_bdd(input; initial_point=initial_point, params=params,
                                                 method_P=method_P, 
-                                                tol=tol, maxit = maxit, pc=true, printlevel = 0);
+                                                tol=tol, maxit = maxit, pc=true, printlevel = 0, A = A);
             end
         end
         println("Size of iter: ", length(history["iter"]))
@@ -97,7 +115,7 @@ function test_IPPMM(problem_type::AbstractIPMProblem,
             preconditioner, rank = unwrap_method_P(method_P)
             IPPMM_args = IPPMMargs(preconditioner, rank, tol, maxit)
             IPPMM_summary = IPPMMSummary(history, opt, time_IPPMM)
-            save_IPPMM_csv(problem_type, problem_name, nrow, IPPMM_args, initpt_info, IPPMM_summary)
+            save_IPPMM_csv(problem_type, problem_name, nrow, IPPMM_args, initpt_info, IPPMM_summary, savedir)
             println("Successfully saved results.\n", "="^110)
         end
     end
@@ -245,17 +263,23 @@ function create_status_df(time_stamp, problem_name, IPPMM_args, IPPMM_summary, i
                      "TotalElapsedCGsolving" => total_CG_elpased)
 end
 
-function save_IPPMM_csv(problem_type, problem_name::String, nrow, IPPMM_args, initpt_info, IPPMM_summary)
-    # Create (if not existed) saving directory: scripts/{problem_type}/results/{problem_name}/IPPMM
-    if typeof(problem_type) <: AbstractMPSProblem
-        if problem_type.presolved
-            destination = scriptsdir(get_class_name(problem_type), "results", "Presolved", problem_name, "IPPMM")
-        else
-            destination = scriptsdir(get_class_name(problem_type), "results", "NonPresolved", problem_name, "IPPMM")
-        end
+function save_IPPMM_csv(problem_type, problem_name::String, nrow, IPPMM_args, initpt_info, IPPMM_summary, savedir::Union{String, Nothing})
+    # Set destination directory
+    if !isnothing(savedir)
+        destination = savedir
     else
-        destination = scriptsdir(get_class_name(problem_type), "results", problem_name, "IPPMM")
+        if typeof(problem_type) <: AbstractMPSProblem
+            if problem_type.presolved
+                destination = scriptsdir(get_class_name(problem_type), "results", "Presolved", problem_name, "IPPMM")
+            else
+                destination = scriptsdir(get_class_name(problem_type), "results", "NonPresolved", problem_name, "IPPMM")
+            end
+        else
+            destination = scriptsdir(get_class_name(problem_type), "results", problem_name, "IPPMM")
+        end
     end
+    
+    # Create (if not existed) saving directory: scripts/{problem_type}/results/{problem_name}/IPPMM
     isdir(destination) ? nothing : mkpath(destination)
     
     # Get time stamp
@@ -312,9 +336,10 @@ function print_header(pl, pc, method_P)
     end
     if (pl >= 3)
         @printf("  ")
-        @printf("%8s  ", "σ")
         @printf("%8s  ", "α_primal")
         @printf("%8s  ", "α_dual")
+        @printf("%8s  ", "ρ")
+        @printf("%8s  ", "δ")
     end
     if (pl >= 1)
         if (pc == true)
@@ -328,14 +353,14 @@ function print_header(pl, pc, method_P)
         (type_method_P <: method_NoPreconditioner) ? nothing : @printf("  ==========")
     end
     if (pl >= 3)
-        @printf("    ========  ========  ========")
+        @printf("    ========  ========  ========  ========")
     end
     if (pl >= 1)
         @printf("\n")
     end
 end
 
-function print_output(pl, pc, method_P, it, xinf, sinf, μ, inneriter, krylov_tol, σ, α_primal, α_dual)
+function print_output(pl, pc, method_P, it, xinf, sinf, μ, inneriter, krylov_tol, α_primal, α_dual, ρ, δ)
     type_method_P = typeof(method_P)
     if (type_method_P <: method_Nystrom)
         rank = method_P.sketchsize
@@ -349,7 +374,14 @@ function print_output(pl, pc, method_P, it, xinf, sinf, μ, inneriter, krylov_to
         @printf("%8.2e  ", xinf)
         @printf("%8.2e  ", sinf)
         @printf("%8.2e  ", μ)
-        if (pc == true)
+        if it == 0
+            if (pc == true)
+                @printf("%11s  ", "")
+                @printf("%11s  ", "")
+            else
+                @printf("%11s  ", "")
+            end
+        elseif (pc == true)
             @printf("%11d  ", inneriter[1])
             @printf("%11d  ", inneriter[2])
         else
@@ -358,14 +390,25 @@ function print_output(pl, pc, method_P, it, xinf, sinf, μ, inneriter, krylov_to
     end
     if (pl >= 2)
         @printf("  ")
-        @printf("%10.2e  ", krylov_tol)
-        (type_method_P <: method_NoPreconditioner) ? nothing : @printf("%10d  ", rank)
+        if it == 0
+            @printf("%10s  ", "")
+            (type_method_P <: method_NoPreconditioner) ? nothing : @printf("%10s  ", "")
+        else
+            @printf("%10.2e  ", krylov_tol)
+            (type_method_P <: method_NoPreconditioner) ? nothing : @printf("%10d  ", rank)
+        end
     end
     if (pl >= 3)
         @printf("  ")
-        @printf("%8.2e  ", σ)
-        @printf("%8.2e  ", α_primal)
-        @printf("%8.2e  ", α_dual)
+        if it == 0
+            @printf("%8s  ", "")
+            @printf("%8s  ", "")
+        else
+            @printf("%8.2e  ", α_primal)
+            @printf("%8.2e  ", α_dual)
+        end
+        @printf("%8.2e  ", ρ)
+        @printf("%8.2e  ", δ)
     end
     if (pl >= 1)
         @printf("\n")

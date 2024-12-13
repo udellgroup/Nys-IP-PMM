@@ -1,0 +1,2 @@
+TimeStamp,Name,Preconditioner,rank,tol,maxiter,Status,IPPMM_iter,IPPMM_time,sum_inner_iter,final_primal_feas,final_dual_feas,optimality_gap,StartPt_iter,StartPt_time,NormalEq_size,TotalElapsedConstructPrecond,TotalElapsedCGsolving
+2024-12-09--01:37:16,risk_model,Nystrom,20,1.0e-8,40,Solved,17,2196.79396967,2588,1.0595665606204479e-10,6.697843473301315e-13,1.9907892681436375e-17,1066,936.56487587,50101,144.818086484,2036.7151144299999

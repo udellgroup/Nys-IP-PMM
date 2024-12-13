@@ -1,0 +1,2 @@
+TimeStamp,Name,Preconditioner,rank,tol,maxiter,Status,IPPMM_iter,IPPMM_time,sum_inner_iter,final_primal_feas,final_dual_feas,optimality_gap,StartPt_iter,StartPt_time,NormalEq_size,TotalElapsedConstructPrecond,TotalElapsedCGsolving
+2024-12-09--17:55:13,risk_model,PartialCholesky,20,1.0e-8,40,Solved,16,11801.296340692,117,4.093481545566198e-9,1.3321639114402227e-10,3.981022674023092e-15,1066,936.56487587,50101,11531.314341731002,87.104092213

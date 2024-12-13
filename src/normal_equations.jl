@@ -80,7 +80,7 @@ end
 """
     update_diagN_opN!(opN)
 """
-function update_diagN_opN!(opN::opNormalEquations{T}) where {T}
+function update_diagN_opN!(opN::opNormalEquations{T}, A::Nothing) where {T}
     @views diagN = opN.diagN
     @views opAT = opN.opAT
     @views tmp = opN.tmp
@@ -94,6 +94,21 @@ function update_diagN_opN!(opN::opNormalEquations{T}) where {T}
         lmul!(opN.sqrtD, tmp)
         diagN[ind] = dot(tmp, tmp)
         ei[ind] = zero(T)
+    end
+    return nothing
+end
+
+function update_diagN_opN!(opN::opNormalEquations{T}, A::AbstractMatrix{T}) where {T}
+    @views diagN = opN.diagN
+    @views tmp = opN.tmp
+    @views D = opN.D
+
+    # Make sure opN.sqrtD is updated
+    @. opN.sqrtD.diag = sqrt(opN.D.diag)
+    @inbounds @simd for ind in eachindex(diagN)
+        @views tmp .= A[ind, :]
+        lmul!(opN.sqrtD, tmp)
+        diagN[ind] = dot(tmp, tmp)
     end
     return nothing
 end

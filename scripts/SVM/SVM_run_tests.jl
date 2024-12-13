@@ -21,5 +21,5 @@ problem_type = SVMProblem(T)
 # Run the tests
 tol=1e-4
 for problem_name in problem_names_list
-    test_IPPMM(problem_type, problem_name, data2methods[problem_name]["method_Ps"], tol, maxit = 25);
+    test_IPPMM(problem_type, problem_name, data2methods[problem_name]["method_Ps"], tol, maxit = 25, timed=true, saved=true);
 end

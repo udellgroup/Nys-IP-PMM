@@ -1,5 +1,6 @@
 using RandomizedPreconditioners
 using JLD2
+using SparseArrays
 
 abstract type PortfolioProblem{T} <: AbstractIPMProblem end 
 
@@ -31,7 +32,7 @@ end
 
 function generate_models(m::Int, n::Int, k::Int, d::AbstractVector; T = Float64, saved::Bool = false)
     # If file exists, load the matrices from the file
-    file_path = scriptsdir("Portfolio", "m=$(m)_n=$(n)_k=$(k).jld2")
+    file_path = datadir("Portfolio", "m=$(m)_n=$(n)_k=$(k).jld2")
     if isfile(file_path)
         println("Loading the matrices from the file (m = $m, n = $n, k = $k)...")
         data = load(file_path)
@@ -42,7 +43,7 @@ function generate_models(m::Int, n::Int, k::Int, d::AbstractVector; T = Float64,
     
     println("Generating the models with m = $m, n = $n, k = $k...")
     # Generate Σ
-    U = qr(randn(T, n, n)).Q
+    U = randn(T, n, n)
     Σ = U * Diagonal(d) * U'
 
     # Generate F and D such that Σ ≈ F * Fᵀ + D
@@ -62,9 +63,8 @@ function generate_models(m::Int, n::Int, k::Int, d::AbstractVector; T = Float64,
 
     if saved
         println("Saving the matrices to the file...")
-        save_path = scriptsdir("Portfolio", "m=$(m)_n=$(n)_k=$(k).jld2")
         # Save the matrices as a JLD2 file
-        save(save_path, "Σ", Σ, "Fᵀ", Fᵀ, "D", D, "μ", μ, "B", B, "Bxub", Bxub)
+        save(file_path, "Σ", Σ, "Fᵀ", Fᵀ, "D", D, "μ", μ, "B", B, "Bxub", Bxub)
         println("Matrices are saved to the file.")
     end
 
@@ -165,4 +165,22 @@ function get_csvnames(time_stamp::String, problem_type::PortfolioProblem, proble
     
     # Return two filenames ending with _history.csv and _status.csv
     return filestem * "_history.csv", filestem * "_status.csv"
+end
+
+
+function get_A_matrix(problem_type::PortfolioProblem{T}) where T <: Number
+    # Extract data
+    @views Fᵀ = problem_type.Fᵀ
+    @views B = problem_type.B
+
+    # Problem dimensions
+    m, n = size(B)
+    k = size(Fᵀ, 1)
+
+    # Constraint matrix A
+    A = [ B spzeros(T, m, k) I;
+          ones(T, 1, n) spzeros(T, 1, k+m);
+          Fᵀ -I spzeros(T, k, m) ]
+        
+    return A
 end
